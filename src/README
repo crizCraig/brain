@@ -1,0 +1,11 @@
+Code follows these style rules:
+http://code.google.com/p/soc/wiki/PythonStyleGuide
+
+Roadmap:
+- Make correct one level brain predictions.
+- Form invariant representations.
+- Predict different outcome for same input based on context.
+- Introduce multiple inputs. i.e. text and visual and audio and location, etc...
+- Scale up input to allow phone sized video input.
+- Release phone brainy, bitty, bitkid, app.
+- Train best brains from community on web data.

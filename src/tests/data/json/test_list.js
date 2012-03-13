@@ -1,0 +1,1 @@
+var tests = {'names': ['lines', 'bouncing_pixel']};

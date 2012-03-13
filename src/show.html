@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="js/jquery.js"></script>
+  <script src="js/mustache.js"></script>
+  <script src="tests/data/json/test_list.js"></script>
+</head>
+<body>
+  <select name="test_select" id="test_select">
+    <option value="">Select a test</option>
+  </select>
+
+  <script id="test_select_template" type="text/template">
+    {{#names}}<option value="{{.}}">{{.}}</option>{{/names}}
+  </script>
+
+  <div>Actual:</div>
+  <canvas id="actual" style="border:1px solid #c3c3c3;">
+    Your browser does not support the canvas element.
+  </canvas>
+
+  <div>Predicted</div>
+  <canvas id="predicted" style="border:1px solid #c3c3c3;"></canvas>
+
+  <div class="controls">
+    <button id="play">Play</button>
+    <button id="step">Step</button>
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
