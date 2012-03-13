@@ -3,13 +3,6 @@ class Brain(object):
     """
     Build an empty brain
 
-    This brain drastically simplifies some aspects of Numenta's CLA's and adds complexity to others.
-    This has been done in the name of achieving greater similarity to biological brains.
-    For instance, context is not represented by a set of four neurons in a column,
-    but rather is passed down through feedback connections with higher level layers.
-    Also, the idea of crowding out neurons to form sparse representations will be replaced by increasing leaf level
-    surface area and making leaf level neurons more specialized to certain types of input.
-
     Arguments:
     num_layers -- Synonymous with layers of cortex. Hierarchical layers of brain. Should be less than six.
     neurons_in_leaf_layer -- Number of neurons in bottom layer of hierarchy.
