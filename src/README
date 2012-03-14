@@ -1,5 +1,11 @@
-Code follows these style rules:
-http://code.google.com/p/soc/wiki/PythonStyleGuide
+This brain drastically simplifies some aspects of Numenta's CLA's and adds complexity to others.
+This has been done in the name of achieving greater similarity to biological brains.
+For instance, context is not represented by a set of four neurons in a column,
+but rather is passed down through feedback connections with higher level layers.
+Also, the idea of crowding out neurons to form sparse representations will be replaced by increasing leaf level
+surface area and making leaf level neurons more specialized to certain types of input.
+
+Code follows these style rules: http://code.google.com/p/soc/wiki/PythonStyleGuide
 
 Roadmap:
 - Make correct one level brain predictions.
