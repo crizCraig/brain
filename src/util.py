@@ -34,7 +34,7 @@ def createBouncingPixel():
   x_diff = 1
   y_diff = 1
   frames = []
-  for i in range(100):
+  for i in xrange(100):
     copy = numpy.array(empty)
     if x + x_diff not in range(0, width):
       x_diff *= -1

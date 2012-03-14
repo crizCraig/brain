@@ -44,7 +44,7 @@ class TestSimple(unittest.TestCase):
     predicted_frames = [numpy.zeros((b.layers[0].height, b.layers[0].width), dtype=numpy.int32).tolist()]
 
     for cycle_index in xrange(LEARN_CYCLES):
-      for frame_index in range(len(input_frames)):
+      for frame_index in xrange(len(input_frames)):
         pixels = numpy.array(input_frames[frame_index])
         b.perceive(pixels)
         prediction_frame_index = frame_index + 1
