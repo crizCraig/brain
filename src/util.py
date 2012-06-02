@@ -23,7 +23,7 @@ def imagesToJSON(folder_name):
         row.append(1 if not image.getpixel((x,y)) else 0)
       arr.append(row)
     frames.append(arr)
-  writeFrames(frames, folder_name)
+  writeFrames(frames, 'actual', folder_name)
 
 def createBouncingPixel():
   """Create sample input that's just a bouncing pixel on a 16x16 square."""
@@ -34,7 +34,7 @@ def createBouncingPixel():
   x_diff = 1
   y_diff = 1
   frames = []
-  for i in xrange(100):
+  for i in xrange(61): # Comes back to starting position in 60 steps
     copy = numpy.array(empty)
     if x + x_diff not in range(0, width):
       x_diff *= -1
@@ -46,15 +46,20 @@ def createBouncingPixel():
     if i % 2:
       y += y_diff
     frames.append(copy.tolist())
-  writeFrames(frames, 'bouncing_pixel')
+  writeFrames(frames, 'actual', 'bouncing_pixel')
 
-def writeFrames(frames, folder_name, prediction=False):
+def writeFrames(frames, name, test_name):
   """Write a sequence of 2D frames to JSON."""
-  file_name = 'out.js' if prediction else 'in.js'
-  var_name = folder_name + ('_predicted' if prediction else '')
-  out_file = open(os.path.join(('tests' if not prediction else ''),
-                               'data', 'json', folder_name, file_name), 'w')
-  out_file.write(var_name + ' = ' + json.dumps(frames))
+  openFile = lambda path: open(os.path.join(*path), 'w')
+  path = ('data', 'json', test_name, name + '.js')
+  try:
+    out_file = openFile(path)
+  except:
+    # Path may be different, depending on where we get called from.
+    # TODO: Fix this kludge.
+    out_file = openFile(('tests', ) + path)
+
+  out_file.write(test_name + '_' + name + ' = ' + json.dumps(frames))
   out_file.close()
 
 if __name__ == '__main__':

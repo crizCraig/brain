@@ -8,10 +8,24 @@ surface area and making leaf level neurons more specialized to certain types of 
 Code follows these style rules: http://code.google.com/p/soc/wiki/PythonStyleGuide
 
 Roadmap:
-- Make correct one level brain predictions.
+- Make correct one level brain predictions. Done
 - Form invariant representations.
+  - Show layers
 - Predict different outcome for same input based on context.
 - Introduce multiple inputs. i.e. text and visual and audio and location, etc...
 - Scale up input to allow phone sized video input.
 - Release phone brainy, bitty, bitkid, app.
 - Train best brains from community on web data.
+
+Idea:
+- Use past 5 time cycles to predict next cycle on same level.
+  - 2 cycles ago predicts 2 cycles ahead OR 4 older cycles provide inhibitive effect.
+
+- Feed SURF data in...
+- ? Map pixels to different locations based on shade or skip brain and just use SVM
+- Rather than mush all temporally close data, compress it.
+
+
+TODO: Maintain 4 dimensional numpy array. (x, y, z, t) of floats for neuron values
+      along with 3 dimensional array (x, y, z) for connections
+      to allow more numpy numeric calculations.

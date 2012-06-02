@@ -19,12 +19,18 @@
     Your browser does not support the canvas element.
   </canvas>
 
-  <div>Predicted</div>
+  <script id="layer_template" type="text/template">
+    {{#layers}}<canvas value="{{.}}">{{.}}</canvas>{{/layers}}
+  </script>
+
+  <div>Predicted:</div>
   <canvas id="predicted" style="border:1px solid #c3c3c3;"></canvas>
 
+  <div>Frame: <span id="frame_num"></span></div>
   <div class="controls">
     <button id="play">Play</button>
     <button id="step">Step</button>
+    <button id="back">Back</button>
   </div>
 
   <script src="js/main.js"></script>

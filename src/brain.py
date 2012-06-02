@@ -17,23 +17,26 @@ class Brain(object):
     self.layers = []
     from layer import Layer
     child_layer = None
+    num_neurons = self.neurons_in_leaf_layer
     for i in xrange(num_layers):
       is_top = True if i == num_layers - 1 else False
-      new_layer = Layer(self.neurons_in_leaf_layer, layer_num=i, child=child_layer, brain=self, is_top=is_top)
+      new_layer = Layer(num_neurons=num_neurons, layer_num=i, child=child_layer, brain=self, is_top=is_top)
       if child_layer:
         child_layer.parent = new_layer
       self.layers.append(new_layer)
       child_layer = new_layer
+      num_neurons /= 4 # Halving each side reduces total by four.
     for layer in self.layers:
-      for neuron in layer.neurons.flat:
+      for neuron in layer.neurons.flat: # TODO, use nditer for speed (order doesn't matter).
         neuron.initConnections()
 
-  def perceive(self, arr):
+  def perceive(self, arr, learn):
     """Take a 2D array and feed it to the leaf layer. Then iterate it up the tree."""
-    #  TODO: Feed input to more than just leaf layer to simulate visual cortex.
+    #  TODO: Try to feed input to more than just leaf layer to simulate visual cortex.
     self.layers[0].set(arr)
-    for layer in self.layers:
-      layer.perceive()
+    if learn:
+      for layer in self.layers:
+        layer.perceive()
 
   def predict(self):
     """Returns 2D numpy array of bottom (leaf) layer prediction."""

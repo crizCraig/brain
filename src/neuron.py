@@ -18,7 +18,7 @@ class Neuron(object):
   # The number of times a neuron sees a pattern in order to predict it.
   CONNECTION_THRESHOLD = 17
 
-  def __init__(self, layer, x, y):
+  def __init__(self, x, y, layer):
     """Construct a neuron and initialize its connections.
 
     Args:
@@ -31,7 +31,7 @@ class Neuron(object):
     self.y = y
 
     # Init dicts of connections with neurons as keys and integer connection strengths for values.
-    self.parents = {}
+    self.parents = {} # A neuron can have more than two parents
     self.children = {}
     self.siblings = {}
 
@@ -45,7 +45,10 @@ class Neuron(object):
     The reverse direction will get initialized when the sibling calls initConnections().
     Child/parent connections are initialized two-way so we only call this once per child/parent connection.
     """
-    self.total_siblings = (2 * self.LOCALITY_DISTANCE) ** 2 # Square with self at center.
+
+    # Square with self at center.
+    self.total_siblings = min(self.layer.width * self.layer.height, 2 * self.LOCALITY_DISTANCE ** 2)
+
     self.total_connections = self.total_siblings / self.SIBLING_CONNECTION_RATIO # ~10k in our brain.
     self.total_children = (self.total_connections - self.total_siblings) / 2
 
@@ -87,7 +90,7 @@ class Neuron(object):
 
     coordinates_added = set()
     child_count = 0
-    while child_count < total_children:
+    while child_count < self.total_children:
       # Pick a random child that's relatively 'close by' and hasn't already been added.
       # Collisions are limited because there are x times more potential connections than children,
       # where x = (SIBLING_CONNECTION_RATIO / (1 - SIBLING_CONNECTION_RATIO)) ** 2 = 81
@@ -129,42 +132,63 @@ class Neuron(object):
     """Return location within brain as z, y, x."""
     return self.z, self.y, self.x
 
-  def increaseConnectionStrength(self, connections, key):
+  def increaseConnectionStrength(self, connections, key, amount):
     """Increase connection strength by two if less than maximum connection strength."""
-    if connections[key] < self.MAX_CONNECTION_STRENGTH - 1:
-      connections[key] += 2
+    if connections[key] <= self.MAX_CONNECTION_STRENGTH - amount:
+      connections[key] += amount
 
-  def decreaseConnectionStrength(self, connections, key):
+  def decreaseConnectionStrength(self, connections, key, amount):
     """Decrease connection strength by one if greater than zero."""
-    if connections[key] > 0:
-      connections[key] -= 1
+    if connections[key] >= amount:
+      connections[key] -= amount
+
+  def observe(self):
+    """Read input from layer below."""
+    if self.layer.layer_num == 0:
+      return
+    else:
+      for child in self.children:
+        if child.isOn():
+          self.set(True)
+          return
 
   def perceive(self):
     """Adjust connection strengths with other neurons."""
+    # Strengthen sibling connections from previous time cycle per STDP.
+    # http://en.wikipedia.org/wiki/Spike-timing-dependent_plasticity
+    self.observe()
     if self.isOn():
-      for neuron, connection_strength in self.siblings.items():
-        # Strengthen sibling connections from previous time cycle per STDP.
-        # http://en.wikipedia.org/wiki/Spike-timing-dependent_plasticity
-        if neuron.wasOn():
-          self.increaseConnectionStrength(self.siblings, neuron)
+      for sibling, connection_strength in self.siblings.items():
+        if sibling.wasOn():
+          self.increaseConnectionStrength(self.siblings, sibling, amount=2)
         else:
-          self.decreaseConnectionStrength(self.siblings, neuron)
+          self.decreaseConnectionStrength(self.siblings, sibling, amount=1)
+
       # TODO: Update children connections (increments of 10?).
-      # TODO: Update parent connections.
+#      for child, connection_strength in self.children.items():
+#        if child.wasOn():
+#          self.increaseConnectionStrength(self.children, child, amount=10)
+#        else:
+#          self.decreaseConnectionStrength(self.children, child, amount=5)
       # TODO: If neuron off, should we decrease connections with neurons that predicted it?
-    #self.printConnections(self.siblings)
+      self.printConnections(self.siblings)
 
   def predict(self):
     """Return a bool representing whether this neuron is predicted to fire during the next time cycle."""
-    direction = 0
-    for neuron, connection_strength in self.siblings.items():
+    potential = 0
+    POTENTIAL_THRESHOLD = 1
+    for sibling, connection_strength in self.siblings.items():
       if connection_strength >= self.CONNECTION_THRESHOLD:
+        # This sibling is a predictor of self.
         # TODO: Maintain separate list of 'connected' neurons if this gets slow.
-        if neuron.isOn():
-          direction += 1
-        else:
-          direction -= 1
-    return direction > 0
+        if sibling.isOn():
+          # The predictive sibling is on, so increase the likelihood of firing.
+          potential += 1
+#        else:
+#          # The predictive sibling is off, so decrease the likelihood of firing.
+           # I disabled this because it wasn't working well, and upon reflection is not a good idea.
+#          potential -= 1
+    return potential >= POTENTIAL_THRESHOLD
 
   def printConnections(self, connections):
     """Pretty prints connections within same layer as 2D array.
@@ -177,3 +201,6 @@ class Neuron(object):
     for neuron, connection_strength in connections.items():
       to_print[neuron.y, neuron.x] = connection_strength
     print to_print
+
+def create_neuron(x, y, layer):
+  return Neuron(x, y, layer)
