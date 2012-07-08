@@ -14,7 +14,11 @@ Roadmap:
 - Predict different outcome for same input based on context.
 - Introduce multiple inputs. i.e. text and visual and audio and location, etc...
 - Scale up input to allow phone sized video input.
+
 - Release phone brainy, bitty, bitkid, app.
+OR
+- Release game where brains can compete.
+
 - Train best brains from community on web data.
 
 Idea:
@@ -29,3 +33,29 @@ Idea:
 TODO: Maintain 4 dimensional numpy array. (x, y, z, t) of floats for neuron values
       along with 3 dimensional array (x, y, z) for connections
       to allow more numpy numeric calculations.
+
+      Write ethics post on machine learning.
+      - Inevitable
+      - No desire for survival
+      - No happiness, sadness, anger
+      - Will be like cheat-mirroring a chess game until better integration.
+      - Current societal and biological problems will be replaced with more difficult space/time problems.
+      - Delineation of self from whole will fade completely away.
+      - Self will be humanity.
+
+      Finish HTM's vs DBN's.
+
+      Combine Probablistic Max Pooling with temporal pooling.
+      - Read paper on how this was done.
+      - Do a difference calculation between frames.
+        - Gray is just on.
+        - White
+        - Are prediction feedbacks doing the same thing?
+
+
+Thoughts from talking w/ Christina
+  - Orientation, time of day, and  location may not be that valuable, compared to difficulty in getting that data.
+  - Combining time inference at all levels with novelty based controls and deep learning
+
+Questions:
+  Why didn't Google use intralayer connections?

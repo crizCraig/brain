@@ -33,7 +33,11 @@ class Brain(object):
   def perceive(self, arr, learn):
     """Take a 2D array and feed it to the leaf layer. Then iterate it up the tree."""
     #  TODO: Try to feed input to more than just leaf layer to simulate visual cortex.
-    self.layers[0].set(arr)
+    for layer in self.layers:
+      if layer.layer_num == 0:
+        layer.set(arr)
+      else:
+        layer.observe()
     if learn:
       for layer in self.layers:
         layer.perceive()

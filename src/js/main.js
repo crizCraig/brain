@@ -1,4 +1,8 @@
 (function() {
+  $(window).load(function() {
+    viewTest('bouncing_pixel');
+  });
+
   // Populate test data from test names in test_list.js.
   $.each(tests.names, function(i, testName) {
     // Load the test JSON.
@@ -16,17 +20,12 @@
 
   // Load the test when it's selected from the drop down.
   testSelect.change(function() {
-    var test_name = testSelect.val();
-    viewTest({
-      'test_name': test_name,
-      'actual': window[test_name + '_actual'],
-      'predicted': window[test_name + '_predicted']
-    });
+    viewTest(testSelect.val());
   });
 
-  function viewTest(data) {
-    var actual = data.actual;
-    var predicted = data.predicted;
+  window.viewtest = viewTest = function (name) {
+    var actual = window[name + '_actual'];
+    var predicted = window[name + '_predicted'];
     var UNIT_SIZE = 16;
     var SIDE_LENGTH = 16;
     var PIXEL_SIDE_LENGTH = UNIT_SIZE * SIDE_LENGTH;

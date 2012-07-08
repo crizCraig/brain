@@ -3,10 +3,18 @@ from neuron import Neuron
 
 class Layer(object):
   """
-  This represents a layer of the neo-cortex, of which there are around six in the human brain.
-  Each layer halves as we move up the hierarchy, forming a three dimensional binary tree.
+  This represents a layer of the neo-cortex,
+  of which there are around six in the human brain.
+  Each layer halves as we move up the hierarchy,
+  forming a three dimensional binary tree.
   """
-  def __init__(self, num_neurons, layer_num=-1, parent=None, child=None, brain=None, is_top=False):
+  def __init__(self,
+               num_neurons,
+               layer_num=-1,
+               parent=None,
+               child=None,
+               brain=None,
+               is_top=False):
     """Initializes Layer with num_neurons x num_neurons array of Neurons.
 
     Args:
@@ -47,13 +55,18 @@ class Layer(object):
       neuron.set(arr[j, i] == 1)
       it.iternext()
 
-    # nditer is uglier and out of order, but faster than:
+    # nditer is uglier and out of order, but supposedly faster than:
     """
     for y in xrange(self.height):
       for x in xrange(self.width):
         self.neurons[y, x].set(arr[y, x] == 1)
     """
 
+
+  observe_vector = np.vectorize(lambda neuron: neuron.observe())
+  def perceive(self):
+    """Have each neuron interpret its current state relative to its connections."""
+    self.observe_vector(self.neurons)
 
   perceive_vector = np.vectorize(lambda neuron: neuron.perceive())
   def perceive(self):
