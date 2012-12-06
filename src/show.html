@@ -14,24 +14,33 @@
     {{#names}}<option value="{{.}}" selected>{{.}}</option>{{/names}}
   </script>
 
-  <div>Actual:</div>
-  <canvas id="actual" style="border:1px solid #c3c3c3;">
-    Your browser does not support the canvas element.
-  </canvas>
-
-  <script id="layer_template" type="text/template">
-    {{#layers}}<canvas value="{{.}}">{{.}}</canvas>{{/layers}}
-  </script>
-
-  <div>Predicted:</div>
-  <canvas id="predicted" style="border:1px solid #c3c3c3;"></canvas>
-
-  <div>Frame: <span id="frame_num"></span></div>
-  <div class="controls">
+  <span class="controls">
     <button id="play">Play</button>
+    <button id="stop">Stop</button>
     <button id="step">Step</button>
     <button id="back">Back</button>
-  </div>
+  </span>
+  Frame: <span id="frame_num">&nbsp;&nbsp;</span>
+
+  <table>
+    <tr>
+      <td>
+        <div>Actual:</div>
+        <canvas id="actual" style="border:1px solid #c3c3c3;">
+          Your browser does not support the canvas element.
+        </canvas>
+
+        <script id="layer_template" type="text/template">
+          {{#layers}}<canvas value="{{.}}">{{.}}</canvas>{{/layers}}
+        </script>
+
+      </td>
+      <td>
+        <div>Predicted:</div>
+        <canvas id="predicted" style="border:1px solid #c3c3c3;"></canvas>
+      </td>
+    </tr>
+  </table>
 
   <script src="js/main.js"></script>
 </body>

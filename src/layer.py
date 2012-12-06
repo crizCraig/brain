@@ -15,6 +15,7 @@ class Layer(object):
                child=None,
                brain=None,
                is_top=False):
+
     """Initializes Layer with num_neurons x num_neurons array of Neurons.
 
     Args:
@@ -39,46 +40,54 @@ class Layer(object):
       neurons.append(row)
     self.neurons = np.array(neurons) # Two dimensional array of neurons.
 
-  def set(self, arr):
-    """Set each neuron in the layer, for feeding input into bottom layer.
+  observe_vector = np.vectorize(lambda neuron: neuron.observe())
+  def observe(self, signal):
+    """Have each neuron observe signal from layer below.
+
+    old comment:
+    ??interpret its current state relative to its connections??
 
     Args:
-      arr: 2D numpy array of 1's and 0's
+      signal: 2D numpy array of 1's and 0's
+
     """
 
-    # Set neurons to True or False.
-    it = np.nditer(self.neurons, flags=['multi_index', 'refs_ok'])
-    while not it.finished:
-      # Set neuron if input is 1.
-      j, i = it.multi_index
-      neuron = it.operands[0][j][i]
-      neuron.set(arr[j, i] == 1)
-      it.iternext()
+    if self.layer_num > 0:
+      self.observe_vector(self.neurons)
+    else:
+      # Layer zero, set neurons directly to signal.
+      iterator = np.nditer(self.neurons, flags=['multi_index', 'refs_ok'])
+      while not iterator.finished:
+        # Set neuron if input is 1.
+        j, i = iterator.multi_index
+        neuron = iterator.operands[0][j][i]
+        neuron.set(signal[j, i] == 1)
+        iterator.iternext()
 
-    # nditer is uglier and out of order, but supposedly faster than:
-    """
-    for y in xrange(self.height):
-      for x in xrange(self.width):
-        self.neurons[y, x].set(arr[y, x] == 1)
-    """
+      # nditer is uglier and out of order, but supposedly faster than:
+      """
+      for y in xrange(self.height):
+        for x in xrange(self.width):
+          self.neurons[y, x].observe(arr[y, x] == 1)
+      """
 
-
-  observe_vector = np.vectorize(lambda neuron: neuron.observe())
-  def perceive(self):
-    """Have each neuron interpret its current state relative to its connections."""
-    self.observe_vector(self.neurons)
-
-  perceive_vector = np.vectorize(lambda neuron: neuron.perceive())
-  def perceive(self):
-    """Have each neuron interpret its current state relative to its connections."""
-    self.perceive_vector(self.neurons)
+  learn_vector = np.vectorize(lambda neuron: neuron.learn())
+  def learn(self):
+    """Adjust the connections to neurons in the same layer."""
+    self.learn_vector(self.neurons)
 
   predict_vector = np.vectorize(lambda neuron: 1 if neuron.predict() else 0)
   def predict(self):
     """Returns predicted state for next time cycle."""
     return self.predict_vector(self.neurons)
 
-  state_vector = np.vectorize(lambda neuron: 1 if neuron.isOn() else 0)
+  expected_vector = np.vectorize(lambda neuron: 1 if neuron.expected() else 0)
+  def expected(self):
+    """Returns 1 for each neuron that expected previous input, zero if not."""
+    return self.expected_vector(self.neurons)
+
+
+  state_vector = np.vectorize(lambda neuron: 1 if neuron.is_on else 0)
   def state(self):
-    """Return activation state of neurons."""
+    """Return state of neurons."""
     return self.state_vector(self.neurons)

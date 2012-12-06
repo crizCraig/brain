@@ -1,1 +1,1 @@
-var tests = {'names': ['lines', 'bouncing_pixel']};
+var tests = {'names': ['lines', 'bouncing_pixel', 'bounce_then_line']};

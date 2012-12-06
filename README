@@ -10,12 +10,29 @@ Code follows these style rules: http://code.google.com/p/soc/wiki/PythonStyleGui
 Roadmap:
 - Make correct one level brain predictions. Done
 - Form invariant representations.
-  - Show layers
+  - Show layers.
+  - Create invariant representation at top level.
+  - Pool input under that representation while input is falls within a reasonable expectation.
+  - When unexpected, form a new invariant represenation to pool the new input under with a weak link to previous invariant representation.
+  - Increase links between invariant represenations as they co-occur and combine them if links are strong enough.
+  - When there is too much unexpected data, avoid more input in some way. (Overexcitation)
+    - Some neurons (i.e. color neurons) are more sensitive to change than other neurons. That's why fast moving objects are mostly in black / white.
+      - These neurons are adjacent to less sensitive neurons.
 - Predict different outcome for same input based on context.
 - Introduce multiple inputs. i.e. text and visual and audio and location, etc...
+- Condense invariant representation chains (compression/source coding/ decision tree).
+- Give mechanism for output / interaction with video say (control stopping, attention, switching, etc…)
 - Scale up input to allow phone sized video input.
 
-- Release phone brainy, bitty, bitkid, app.
+Two threads
+ - Predicting thread writes predictions, reads signals.
+   - Transforms abstract prediction to more concrete ones by reading signal from layer below.
+ - Signal thread writes signals, reads predictions.
+   - Writes signal to layer above, only if unexpected.
+
+ - USE pipes to do this. http://docs.python.org/library/multiprocessing.html#exchanging-objects-between-processes
+
+- Release phone brainy, bitty, bitkid, bitbaby, bitbrain app.
 OR
 - Release game where brains can compete.
 
@@ -40,8 +57,7 @@ TODO: Maintain 4 dimensional numpy array. (x, y, z, t) of floats for neuron valu
       - No happiness, sadness, anger
       - Will be like cheat-mirroring a chess game until better integration.
       - Current societal and biological problems will be replaced with more difficult space/time problems.
-      - Delineation of self from whole will fade completely away.
-      - Self will be humanity.
+      - Connecting to machine brains will be analogous to connecting to the internet.
 
       Finish HTM's vs DBN's.
 
@@ -58,4 +74,6 @@ Thoughts from talking w/ Christina
   - Combining time inference at all levels with novelty based controls and deep learning
 
 Questions:
-  Why didn't Google use intralayer connections?
+  Why didn't Google use intralayer connections? - Appears to be convetion in traditional neural nets.
+d
+
