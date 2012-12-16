@@ -179,7 +179,7 @@ class Neuron(object):
 #    for sibling in self.siblings:
 #      adjust_connection()
 #        for sibling.history
-#          if sibling was predicted me
+#          if sibling was predicted
 #            strengthen connection
 
     # If reality not predicted by the past, learn.
@@ -190,12 +190,13 @@ class Neuron(object):
     # prediction and perhaps even learn that it leads to the negative consequence.
     # i.e. by strengthening an inhibitory connection. (Some connections in the
     # brain are known to do this as well. http://en.wikipedia.org/wiki/Neurotransmitter#Excitatory_and_inhibitory)
-    # If input was predicted, we should strengthen the connections that predicted it.
+    # If input was predicted, we should either ignore the input (saving cycles) or strengthen the connections that
+    # predicted it based on some randomness function.
     # Also, we should detect when novelty of input is too high at the layer level and ignore it if it is.
 
     if self.is_on:
       if self.predicted:
-        # Strengthend siblings that predicted me.
+        # TODO: For some percentage of the time, strengthen siblings that predicted me.
         pass
       else:
         # Learn from siblings that predicted me
@@ -207,7 +208,7 @@ class Neuron(object):
 
           for sibling, strength in siblings.items():
             if sibling.last_on == delay:
-              # Sibling predicted me, strengthen my connection with this sibiling.
+              # Sibling predicted me, strengthen my connection with this sibling.
               strength = min(strength + self.STDP_INCR, self.MAX_CONNECTION_STRENGTH)
               if strength >= self.CONNECTION_THRESHOLD:
                 predictor_siblings.add(sibling)
