@@ -6,7 +6,7 @@ class Layer(object):
   This represents a layer of the neo-cortex,
   of which there are around six in the human brain.
   Each layer halves as we move up the hierarchy,
-  forming a three dimensional binary tree.
+  forming a sort of neuron pyramid.
   """
   def __init__(self,
                num_neurons,
