@@ -1,30 +1,48 @@
-import sys
 import numpy
 import random
 import math
 
+from connection import Connection
+
+
 class Neuron(object):
-  # How far back each neuron can remember.
+  # Simulates propagation delay from neuron to neuron by storing history
+  # and checking for casual relationships throughout a range of time.
   MAX_HISTORY = 5
 
   # Range of history values, to avoid recalculation.
   HISTORY_RANGE = range(1, MAX_HISTORY + 1)
 
   # Maximum distance neurons can be from each other to connect within same layer.
-  LOCALITY_DISTANCE = 8 # 16 x 16 connection square
+  SIBLING_LOCALITY_DISTANCE = 8 # 16 x 16 connection square
+
+  # Maximum in-plane distance a child neuron can be from self.
+  CHILD_LOCALITY_DISTANCE = 2
+
+  # Maximum in-plane distance a parent neuron can be from self.
+  PARENT_LOCALITY_DISTANCE = 2
 
   # The fraction of a neuron's total connections that are siblings connections.
   # (Based off biological brains.)
   SIBLING_CONNECTION_RATIO = 0.9
 
-  # The maximum value for a connection between two neurons.
-  MAX_CONNECTION_STRENGTH = sys.maxint
+  # The fraction of a neuron's total connections that are child connections.
+  CHILD_CONNECTION_RATIO = .05
 
-  # The number of times a neuron needs to see a pattern to predict it.
-  CONNECTION_THRESHOLD = 0 #17
+  # The fraction of a neuron's total connections that are parent connections.
+  PARENT_CONNECTION_RATIO = .05
 
-  STDP_INCR = 10
-  STDP_DECR = 1
+  # Equivalent to the sum of excitatory postsynaptic potentials and
+  # inhibitory postsynaptic potentials necessary for a predictive sibling to
+  # trigger the firing of a child.
+  # See: http://en.wikipedia.org/wiki/Axon_hillock
+  SIBLING_TRIGGERING_THRESHOLD = 1
+
+  # Equivalent to the sum of excitatory postsynaptic potentials and
+  # inhibitory postsynaptic potentials necessary for a predictive parent to
+  # trigger the firing of a child.
+  # See: http://en.wikipedia.org/wiki/Axon_hillock
+  CHILD_TRIGGERING_THRESHOLD = 10
 
   def __init__(self, x, y, layer):
     """Construct a neuron and initialize its connections.
@@ -35,17 +53,31 @@ class Neuron(object):
       y: Vertical position within layer.
     """
     self.layer = layer
-    self.brain = layer.brain
+    self.brain = self.layer.brain
+
+    if self.layer.layer_num == 0:
+      # This neuron is in the leaf layer closest to sensory data.
+      self.child_layer = None
+    else:
+      self.child_layer = self.brain.layers[self.layer.layer_num - 1]
+
+    if self.layer.is_top:
+      # This neuron is in the root layer farthest from sensory data.
+      self.parent_layer = None
+    else:
+      self.parent_layer = self.brain.layers[self.brain.num_layers - 1]
+
     self.x = x
     self.y = y
 
-    # Init dicts of connections with neurons as keys and integer connection strengths for values.
-    self.parents  = {} # A neuron can have more than two parents
-    self.children = {}
-    self.siblings = {}
+    self.parent_connections  = []
+    self.child_connections   = []
+    self.sibling_connections = []
 
-    # Dict of siblings that predict this neuron.
-    self.predictor_siblings = [set() for i in xrange(self.MAX_HISTORY)]
+    # Connections to siblings that predict self.
+    self.predictive_sibling_connections = [set() for _ in xrange(self.MAX_HISTORY)]
+    self.predictive_child_connections   = [set() for _ in xrange(self.MAX_HISTORY)]
+    self.predictive_parent_connections  = [set() for _ in xrange(self.MAX_HISTORY)]
 
     # TODO?: Make siblings a 3D array (x, y, t) of connections to allow for more numpy speediness.
 
@@ -62,23 +94,29 @@ class Neuron(object):
 
     We call this after __init__ so that parent neurons exist.
     Sibling connections are initialized one-way.
-    The reverse direction will get initialized when the sibling calls initConnections().
-    Child/parent connections are initialized two-way so we only call this once per child/parent connection.
+    The reverse direction will get initialized when the sibling calls
+    initConnections(). Child/parent connections are initialized two-way so we
+    only call this once per child/parent connection.
     """
 
+    # Siblings
     self.initSiblingConnections()
 
-    # Square with self at center.
-    self.total_siblings = min(2 * self.LOCALITY_DISTANCE ** 2, self.layer.width * self.layer.height)
-
-    # ~10k per neuron in our brain.
-    self.total_connections = \
-      self.total_siblings / self.SIBLING_CONNECTION_RATIO
-
-    self.total_children = (self.total_connections - self.total_siblings) / 2
-
-    if self.layer.layer_num > 0:
+    # Children
+    if self.child_layer:
+      self.total_children = min(
+        2 * self.CHILD_LOCALITY_DISTANCE ** 2,
+        self.child_layer.width * self.child_layer.height
+      )
       self.initChildConnections()
+
+    # Parents
+    if self.parent_layer:
+      self.total_parents = min(
+        2 * self.PARENT_LOCALITY_DISTANCE ** 2,
+        self.layer.width * self.layer.height
+      )
+      self.initParentConnections()
 
   def _minMaxXY(self, x, y, width, height, distance):
     """Returns bounds for 2D area of potential connections."""
@@ -88,51 +126,68 @@ class Neuron(object):
     max_y = min(height - 1, y + distance)
     return min_x, max_x, min_y, max_y
 
+  def _neuronsWithinSquare(self, distance, layer):
+    """ Return count of neurons within square with self at center.
+    *--------* <-*
+    |        |   | <- x
+    |   []   | <-*
+    |        |
+    *--------*
+    ^---2x---^
+
+     AREA = 2x^2
+
+    If this square doesn't fit in layer, make it as big as possible. #TODO: Wrap layer.
+    """
+    min(2 * distance ** 2, layer.width * layer.height)
+
   def initSiblingConnections(self):
     """Create connections with neurons on same layer within
     self.LOCALITY_DISTANCE."""
+
+    self.total_siblings = self._neuronsWithinSquare(
+      self.SIBLING_LOCALITY_DISTANCE, self.layer)
 
     min_x, max_x, min_y, max_y = self._minMaxXY(
       self.x,
       self.y,
       self.layer.width,
       self.layer.height,
-      self.LOCALITY_DISTANCE)
+      self.SIBLING_LOCALITY_DISTANCE)
 
     for y in xrange(min_y, max_y + 1):
       for x in xrange(min_x, max_x + 1):
-        if not(x == self.x and y == self.y):
-          self.siblings[self.layer.neurons[y, x]] = 0
+        if not (x == self.x and y == self.y):
+          self.sibling_connections.append(
+            Connection(to=self.layer.neurons[y, x]))
 
   def initChildConnections(self):
     """Initialize child connections.
 
     To the extent there is more than one child connection, lower level data
     is 'pooled' or siphoned into higher level neurons, thus abstracting
-    the low level information.
+    the lower level information.
     Similarly, the layers in the human visual cortex sample larger visual fields further up the hierarchy.
-    See layer V3 here: http://en.wikipedia.org/wiki/Visual_cortex or http://hilinkit.appspot.com/y9qdtf
+    See info on layer V3 here: http://en.wikipedia.org/wiki/Visual_cortex or
+    http://hilinkit.appspot.com/y9qdtf
     """
     child_layer = self.layer.child
     rel_x = float(self.x + 1) / self.layer.width
     rel_y = float(self.y + 1) / self.layer.height
     center_x = int(round(rel_x * child_layer.width)) - 1
     center_y = int(round(rel_y * child_layer.height)) - 1
-    distance = int(math.ceil(self.total_children / 2)) # Relies on layers being squares.
 
-    # TODO: Shift towards center if hits edge.
     min_x, max_x, min_y, max_y = self._minMaxXY(
       center_x,
       center_y,
       child_layer.width,
       child_layer.height,
-      distance)
+      self.CHILD_LOCALITY_DISTANCE)
 
     for x in xrange(min_x, max_x):
       for y in xrange(min_y, max_y):
         child = child_layer.neurons[y, x]
-        self.children[child] = 0
-        child.parents[self] = 0
+        self.child_connections.append(Connection(to=child))
 
   def set(self, state):
     """Set boolean state of neuron. Only called on leaf neurons."""
@@ -148,6 +203,7 @@ class Neuron(object):
   def get_z(self):
     """Property representing vertical level within hierarchy."""
     return self.layer.layer_num
+
   z = property(get_z)
 
   def __cmp__(self, other):
@@ -161,7 +217,19 @@ class Neuron(object):
   def observe(self):
     """Funnel in input from below."""
     if self.layer.layer_num > 0:
-      for child in self.children:
+      for child in self.child_connections:
+        # TODO: Sum all predicting connections and test against threshold.
+        # TODO: Subsample less neurons when predictions are being met to conserve resources.
+
+        # Neurons which connect to output (motor control) will
+        # fire sporadically at first since feedback connections will be
+        # weak and unvaried.
+        # Similarly feedback connections will have a lower correspodence
+        # with firing in early training as compared to feedforward connections
+        # that are grabbing input from a more structured world.
+        # Once structure is introduced into the brain, however, this will
+        # change and feedback connections will exert more control over the
+        # neuron.
         if child.is_on:
           self.set(True)
           return
@@ -169,90 +237,84 @@ class Neuron(object):
   def learn(self):
     """Adjust connection strengths with other neurons.
     Strengthen sibling connections from previous time cycle per STDP.
+    :param self:
     http://en.wikipedia.org/wiki/Spike-timing-dependent_plasticity
 
-    Basically, go connections to this neuron on the same layer
-    and see if they predict if this neuron is going to turn on.
+    TODO: Learn subset of connections online and adjust all connections offline
+          over longer periods of time.
     """
+    if self.is_on and (
 
-#  if not predicted (by siblings or parents)
-#    for sibling in self.siblings:
-#      adjust_connection()
-#        for sibling.history
-#          if sibling was predicted
-#            strengthen connection
+      # If reality not predicted by the past, learn.
+      not self.predicted or
 
-    # If reality not predicted by the past, learn.
+      # Take  time to reinforce what we already know.
+      # However, don't spend too much energy on it.
+      random(1.0) < 0.15
+    ):
 
-    # Do not take state directly from parents though. Parents only predict.
-    # For example, if I play piano and miss a note, the prediction of the correct
-    # note from above was incorrect. Learn the input that caused the incorrect
-    # prediction and perhaps even learn that it leads to the negative consequence.
-    # i.e. by strengthening an inhibitory connection. (Some connections in the
-    # brain are known to do this as well. http://en.wikipedia.org/wiki/Neurotransmitter#Excitatory_and_inhibitory)
-    # If input was predicted, we should either ignore the input (saving cycles) or strengthen the connections that
-    # predicted it based on some randomness function.
-    # Also, we should detect when novelty of input is too high at the layer level and ignore it if it is.
+      self.learn_from_children()
+      self.learn_from_parents()
+      self.learn_from_siblings()
 
-    if self.is_on:
-      if self.predicted:
-        # TODO: For some percentage of the time, strengthen siblings that predicted me.
-        pass
-      else:
-        # Learn from siblings that predicted me
-        siblings = self.siblings # Speed up lookup by making siblings a local variable.
-        for delay in self.HISTORY_RANGE:
 
-          # Get siblings from previous frame so we can see if they fired and predicted this neuron.
-          predictor_siblings = self.predictor_siblings[delay - 1]
+  def learn_from_children(self):
+    self.learn_from(self.child_connections, self.predictive_child_connections)
 
-          for sibling, strength in siblings.items():
-            if sibling.last_on == delay:
-              # Sibling predicted me, strengthen my connection with this sibling.
-              strength = min(strength + self.STDP_INCR, self.MAX_CONNECTION_STRENGTH)
-              if strength >= self.CONNECTION_THRESHOLD:
-                predictor_siblings.add(sibling)
-              siblings[sibling] = strength
-            else:
-              # Sibling did not predict me, weaken connection with this sibling slightly.
-              strength = max(strength - self.STDP_DECR, 0)
+  def learn_from_parents(self):
+    self.learn_from(self.parent_connections, self.predictive_parent_connections)
 
-              if strength < self.CONNECTION_THRESHOLD:
-                try:
-                  predictor_siblings.remove(sibling)
-                except KeyError, e:
-                  # Sibling was not a predictor.
-                  pass
-              siblings[sibling] = strength
+  def learn_from_siblings(self):
+    self.learn_from(self.child_connections, self.predictive_sibling_connections)
 
-      pass
-      # TODO: Update children connections half the time.
-      # If didn't predict children, learn from them.
-      #
-
-#      for child, connection_strength in self.children.items():
-#        if child.wasOn():
-#          self.increaseCxnStrength(self.children, child, amount=10)
-#        else:
-#          self.decreaseCxnStrength(self.children, child, amount=5)
-      # TODO: If neuron off, should we decrease connections with neurons that predicted it?
-      #self.print_connections(self.siblings)
+  def learn_from(self, connections, predictive_connections):
+    # Different connections have different propagation times.
+    # See: https://www.dropbox.com/s/jt3vmmqyv5ldg3r/STDP%20timing.pdf
+    for delay in self.HISTORY_RANGE:
+      # Update connections by learning from neighbors that predicted me.
+      # Get siblings from previous frame so we can see if they fired and
+      # predicted this neuron.
+      predictive_connections_for_frame = predictive_connections[delay - 1]
+      for connection in connections:
+        connection.adjust_strength(delay, predictive_connections_for_frame)
 
   def predict(self):
-    """Return a bool representing whether this neuron is predicted to fire during the next time cycle."""
+    """Return a bool representing whether this neuron is predicted to fire."""
     potential = 0
-    POTENTIAL_THRESHOLD = 1
-    # TODO: Look at parents.
-    for delay in self.HISTORY_RANGE:
-      for sib in self.predictor_siblings[delay - 1]:
-        if sib.last_on == delay:
-          potential += 1
 
-  #        else:
-  #          # The predictive sibling is off, so decrease the likelihood of firing.
-           # I disabled this because it wasn't working well, and upon reflection is not a good idea.
-  #          potential -= 1
-    return potential > POTENTIAL_THRESHOLD
+    for delay in self.HISTORY_RANGE:
+
+      # Siblings
+      for sibling_connection in self.predictive_sibling_connections[delay - 1]:
+        if sibling_connection.neighbor.last_on == delay:
+          potential += sibling_connection.strength
+
+      # Parents
+      for parent_connection in self.predictive_parent_connections[delay - 1]:
+        if parent_connection.neighbor.last_on == delay:
+          potential += parent_connection.strength
+
+      # Children
+      for child_connection in self.predictive_child_connections[delay - 1]:
+        if child_connection.neighbor.last_on == delay:
+          potential += child_connection.strength
+
+
+    self.predicted = potential > self.SIBLING_TRIGGERING_THRESHOLD
+    return self.predicted
+
+  # def setPredicted(self):
+  #   return 'psuedocode below'
+  #
+  #   sum = 0
+  #   for parent in self.parent_connections:
+  #     if self.isPredictedBy(parent):
+  #       sum += 1
+  #
+  #   if sum > self.CHILD_TRIGGERING_THRESHOLD:
+  #     return True
+  #   else:
+  #     return False
 
   def print_connections(self, connections):
     """Pretty prints connections within same layer as 2D array.
@@ -261,7 +323,8 @@ class Neuron(object):
       connections: List of connections, i.e. siblings or children.
     """
     sample_cxn = connections.keys()[0]
-    to_print = numpy.ones((sample_cxn.layer.height, sample_cxn.layer.width), dtype=numpy.int8) * -1
+    to_print = numpy.ones((sample_cxn.layer.height, sample_cxn.layer.width),
+                          dtype=numpy.int8) * -1
     for neuron, connection_strength in connections.items():
       to_print[neuron.y, neuron.x] = connection_strength
     print to_print

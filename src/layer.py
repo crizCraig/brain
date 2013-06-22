@@ -44,9 +44,6 @@ class Layer(object):
   def observe(self, signal):
     """Have each neuron observe signal from layer below.
 
-    old comment:
-    ??interpret its current state relative to its connections??
-
     Args:
       signal: 2D numpy array of 1's and 0's
 

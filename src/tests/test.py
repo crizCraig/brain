@@ -6,6 +6,7 @@ from src.brain import Brain
 from src.neuron import Neuron
 import src.util
 
+
 class TestSimple(unittest.TestCase):
   # Unless true, will pass all tests and write predicted frames to HTML viewer.
   AUTOMATED_TEST = False
@@ -13,25 +14,25 @@ class TestSimple(unittest.TestCase):
   def setUp(self):
     """Set some parameters to speed up testing and some class level parameters."""
 
-    self.ORIGINAL_NEURON_CONNECTION_THRESHOLD = Neuron.CONNECTION_THRESHOLD
+    self.ORIGINAL_NEURON_CONNECTION_THRESHOLD = Neuron.PREDICTIVE_CONNECTION_THRESHOLD
     # These are just simple test cases.
     # Let the brain learn the pattern in one cycle to speed things up.
-    Neuron.CONNECTION_THRESHOLD = 1
+    Neuron.PREDICTIVE_CONNECTION_THRESHOLD = 1
 
-    self.ORIGINAL_NEURON_LOCALITY_DISTANCE = Neuron.LOCALITY_DISTANCE
-#    # Set the locality distance to the whole area
-#    # so all positions are predictable for testing.
-#    Neuron.LOCALITY_DISTANCE = 16
+    self.ORIGINAL_NEURON_LOCALITY_DISTANCE = Neuron.SIBLING_LOCALITY_DISTANCE
+  #    # Set the locality distance to the whole area
+  #    # so all positions are predictable for testing.
+  #    Neuron.LOCALITY_DISTANCE = 16
 
   def testLineMoveRight(self):
     """Test predicting vertical line moving left to right."""
     self.learnAndTestPredictions(self.getFrames('lines'))
-#
-#  def testLineJumping(self):
-#    """Test predicting vertical line jumping around to a repeating pattern of random columns."""
-#    input_frames = self.getFrames('lines')
-#    random.shuffle(input_frames)
-#    self.learnAndTestPredictions(input_frames)
+  #
+  #  def testLineJumping(self):
+  #    """Test predicting vertical line jumping around to a repeating pattern of random columns."""
+  #    input_frames = self.getFrames('lines')
+  #    random.shuffle(input_frames)
+  #    self.learnAndTestPredictions(input_frames)
 
   def testBouncingPixel(self):
     """Test predicting pixel that bounces around."""
@@ -41,9 +42,9 @@ class TestSimple(unittest.TestCase):
     """Test predicting pixel that bounces around."""
     self.learnAndTestPredictions(self.getFrames('bounce_then_line'))
 
-#  def testInitMultiLayer(self):
-#    b = Brain(num_layers=2, neurons_in_leaf_layer=256)
-#    self.assertEqual(b.layers[1].neurons.size, 64)
+  #  def testInitMultiLayer(self):
+  #    b = Brain(num_layers=2, neurons_in_leaf_layer=256)
+  #    self.assertEqual(b.layers[1].neurons.size, 64)
 
   def testSetNeuron(self):
     n = Neuron(0, 0, None)
@@ -61,6 +62,11 @@ class TestSimple(unittest.TestCase):
     for i in xrange(Neuron.MAX_HISTORY):
       n.set(False)
     assert(n.last_on == 0) # Too long ago to remember.
+
+  def testMotorControl:
+    # TODO: Fire some emotional learning boost when controlled pixels acting as
+    # motor controlled limb touches some food pixels.
+    pass
 
   def learnAndTestPredictions(self, input_frames):
     """Teach brain with input_frames and make sure predicted frames match."""
@@ -100,9 +106,9 @@ class TestSimple(unittest.TestCase):
       b.perceive(frame, learn=False)
       prediction = b.predict().tolist() # Bottom layer prediction.
       record()
-#      print index
-#      print frame
-#      print numpy.array(prediction)
+      #      print index
+      #      print frame
+      #      print numpy.array(prediction)
       predicted_frames.append(prediction)
       if self.AUTOMATED_TEST and prediction != input_frames[index + 1]:
         expected_prediction = numpy.array(input_frames[index + 1])
@@ -121,8 +127,8 @@ class TestSimple(unittest.TestCase):
 
   def tearDown(self):
     # Restore class level parameters we changed.
-    Neuron.CONNECTION_THRESHOLD = self.ORIGINAL_NEURON_CONNECTION_THRESHOLD
-    Neuron.LOCALITY_DISTANCE = self.ORIGINAL_NEURON_LOCALITY_DISTANCE
+    Neuron.PREDICTIVE_CONNECTION_THRESHOLD = self.ORIGINAL_NEURON_CONNECTION_THRESHOLD
+    Neuron.SIBLING_LOCALITY_DISTANCE = self.ORIGINAL_NEURON_LOCALITY_DISTANCE
 
 if __name__ == '__main__':
   import cProfile
