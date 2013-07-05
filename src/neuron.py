@@ -147,8 +147,7 @@ class Neuron(object):
     We call this after __init__ so that parent neurons exist.
     Sibling connections are initialized one-way.
     The reverse direction will get initialized when the sibling calls
-    initConnections(). Child/parent connections are initialized two-way so we
-    only call this once per child/parent connection.
+    initConnections(). Same with child/parent connections.
     """
     self.initSiblingConnections()
     if self.layer.child:
