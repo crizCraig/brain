@@ -1,4 +1,4 @@
-License: WTFPL: https://en.wikipedia.org/wiki/WTFPL
+License: [WTFPL](https://en.wikipedia.org/wiki/WTFPL)
 
 Visualization of what it's doing right now.
 https://dl.dropbox.com/u/9632169/brain_demos/stdp_and_ltp.html
