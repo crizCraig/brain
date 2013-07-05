@@ -33,7 +33,7 @@ class Neuron(object):
   # as well as a non-overlapping receptive field with other neurons.
 
   # Simulates propagation delay from neuron to neuron by storing history
-  # and checking for casual relationships throughout a range of time.
+  # and checking for causal relationships throughout a range of time.
   MAX_HISTORY = 5
 
   # Range of history values, to avoid recalculation.
