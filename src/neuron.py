@@ -104,6 +104,10 @@ class Neuron(object):
   # similar later on.
   IMPORTANCE_OF_NEIGHBOR_POTENTIAL = 0
 
+  # Amount of time to spend reinforcing things that we already know/predicted
+  # correctly.
+  REINFORCEMENT_LEARNING_RATIO = 0.15
+
   def __init__(self, x, y, layer):
     """Construct a neuron and initialize its connections.
 
@@ -287,7 +291,7 @@ class Neuron(object):
 
       # Take time to reinforce what we already know, but don't spend too much
       # energy on it.
-      random.random() < 0.15
+      random.random() < self.REINFORCEMENT_LEARNING_RATIO
     ):
 
       self.learn_from_children()
