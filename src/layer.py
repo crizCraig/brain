@@ -27,11 +27,16 @@ class Layer(object):
       is_top: Whether or not this layer is the top layer of the hierarchy.
     """
     self.layer_num = layer_num
-    self.parent = parent
-    self.child = child
-    self.width = self.height = int(num_neurons ** 0.5) # Square
-    self.brain = brain
-    self.is_top = is_top
+    self.parent    = parent
+    self.child     = child
+    self.width     = self.height = int(num_neurons ** 0.5) # Square
+    self.brain     = brain
+    self.is_top    = is_top
+    self.is_bottom = layer_num == 0
+    self.initNeurons()
+
+
+  def initNeurons(self):
     neurons = []
     for y in xrange(self.height):
       row = []
@@ -48,25 +53,30 @@ class Layer(object):
       signal: 2D numpy array of 1's and 0's
 
     """
-
-    if self.layer_num > 0:
-      self.observe_vector(self.neurons)
+    if self.is_bottom:
+      self.setNeuronsToSensoryInput(signal)
     else:
-      # Layer zero, set neurons directly to signal.
-      iterator = np.nditer(self.neurons, flags=['multi_index', 'refs_ok'])
-      while not iterator.finished:
-        # Set neuron if input is 1.
-        j, i = iterator.multi_index
-        neuron = iterator.operands[0][j][i]
-        neuron.set(signal[j, i] == 1)
-        iterator.iternext()
+      self.observe_vector(self.neurons)
 
-      # nditer is uglier and out of order, but supposedly faster than:
-      """
-      for y in xrange(self.height):
-        for x in xrange(self.width):
-          self.neurons[y, x].observe(arr[y, x] == 1)
-      """
+  def setNeuronsToSensoryInput(self, signal):
+    """
+    This is only for layer zero and layer zero is basically a mirror of
+    sensory input.
+    """
+    iterator = np.nditer(self.neurons, flags=['multi_index', 'refs_ok'])
+    while not iterator.finished:
+      # Set neuron if input is 1.
+      j, i = iterator.multi_index
+      neuron = iterator.operands[0][j][i]
+      neuron.set(signal[j, i] == 1)
+      iterator.iternext()
+    """
+    # nditer is uglier and out of order, but supposedly faster than:
+    for y in xrange(self.height):
+      for x in xrange(self.width):
+        self.neurons[y, x].observe(arr[y, x] == 1)
+    """
+
 
   learn_vector = np.vectorize(lambda neuron: neuron.learn())
   def learn(self):

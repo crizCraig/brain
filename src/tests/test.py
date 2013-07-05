@@ -63,7 +63,7 @@ class TestSimple(unittest.TestCase):
       n.set(False)
     assert(n.last_on == 0) # Too long ago to remember.
 
-  def testMotorControl:
+  def testMotorControl(self):
     # TODO: Fire some emotional learning boost when controlled pixels acting as
     # motor controlled limb touches some food pixels.
     pass
