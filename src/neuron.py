@@ -10,7 +10,7 @@ class Neuron(object):
   # PREDICT
   # Check parent and sibling connections for clues as to what will happen
   # next based off of what happened in the past. This input alone may be
-  # enough to cause the neuron to fire, depending on what happens in the LEARN
+  # enough to cause the neuron to fire, depending on what happens in the OBSERVE
   # phase.
   #
   # OBSERVE
