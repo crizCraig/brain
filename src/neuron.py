@@ -261,8 +261,8 @@ class Neuron(object):
       # group is sensitive only to the backgrounds behind figures of interest.
 
 
-      self.is_on = self.testConnections(self.strong_child_connections,
-                                        self.CHILD_TRIGGERING_THRESHOLD)
+      self.set(self.testConnections(self.strong_child_connections,
+                                        self.CHILD_TRIGGERING_THRESHOLD))
 
       if not self.predicted:
         # Unexpected firings get a stronger activation akin to higher firing
