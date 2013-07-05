@@ -309,16 +309,16 @@ class Neuron(object):
   def learn_from_siblings(self):
     self.learn_from(self.child_connections, self.strong_sibling_connections)
 
-  def learn_from(self, connections, predictive_connections):
+  def learn_from(self, connections, strong_connections):
     # Different connections have different propagation times.
     # See: https://www.dropbox.com/s/jt3vmmqyv5ldg3r/STDP%20timing.pdf
     for delay in self.HISTORY_RANGE:
       # Update connections by learning from neighbors that predicted me.
       # Get siblings from previous frame so we can see if they fired and
       # predicted this neuron.
-      predictive_connections_for_frame = predictive_connections[delay - 1]
+      strong_connections_for_frame = strong_connections[delay - 1]
       for connection in connections:
-        connection.adjust_strength(delay, predictive_connections_for_frame)
+        connection.adjust_strength(delay, strong_connections_for_frame)
 
   def resetPotential(self):
     """Reset potential to quiet state."""

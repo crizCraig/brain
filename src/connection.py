@@ -36,12 +36,12 @@ class Connection(object):
     self.neighbor = to
     self.strength = 0
 
-  def adjust_strength(self, delay, predictive_connections_for_frame):
+  def adjust_strength(self, delay, strong_connections_for_frame):
     """ Set connection strength to newly learned value. """
     if self.neighbor.last_on == delay:
-      self.boost_strength(predictive_connections_for_frame)
+      self.boost_strength(strong_connections_for_frame)
     else:
-      self.decrease_strength(predictive_connections_for_frame)
+      self.decrease_strength(strong_connections_for_frame)
 
   def boost_strength(self, strong_connections_for_frame):
     self.strength = min(self.strength + self.STDP_INCREMENT,
